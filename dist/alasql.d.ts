@@ -1,7 +1,5 @@
 // Project: https://github.com/agershun/alasql
 
-import * as xlsx from "xlsx";
-
 declare namespace alaSQLSpace {
     interface AlaSQLCallback {
         (data?: any, err?: Error): void;
@@ -63,6 +61,8 @@ declare namespace alaSQLSpace {
     interface userAggregatorLookUp {
         [x: string]: userAggregator;
     }
+
+    import * as xlsx from "xlsx";
 
     interface AlaSQL {
         options: AlaSQLOptions;
