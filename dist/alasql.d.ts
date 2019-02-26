@@ -74,7 +74,6 @@ declare namespace alaSQLSpace {
         aggr: userAggregatorLookUp;
         autoval(tablename: string, colname: string, getNext?:boolean): number;
         yy:{};
-        setXLSX(xlsxlib: typeof xlsx): void;
     }
 }
 
