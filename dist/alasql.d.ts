@@ -62,8 +62,6 @@ declare namespace alaSQLSpace {
         [x: string]: userAggregator;
     }
 
-    import * as xlsx from "xlsx";
-
     interface AlaSQL {
         options: AlaSQLOptions;
         error: Error;
