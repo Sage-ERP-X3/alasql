@@ -269,6 +269,7 @@ alasql.from.CSV = function(contents, opts, cb, idx, query) {
 							if (
 								typeof r[h] !== 'undefined' &&
 								r[h].length !== 0 &&
+								!/^[0\d]/.test(r[h]) &&
 								r[h].trim() == +r[h]
 							) {
 								// jshint ignore:line
@@ -284,6 +285,7 @@ alasql.from.CSV = function(contents, opts, cb, idx, query) {
 						if (
 							typeof r[h] !== 'undefined' &&
 							r[h].length !== 0 &&
+							!/^[0\d]/.test(r[h]) &&
 							r[h].trim() == +r[h]
 						) {
 							// jshint ignore:line
