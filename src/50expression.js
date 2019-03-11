@@ -370,16 +370,16 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 		return ref(_this.right);
 	};
 
-	if (this.op === '=') {
+	if (op === '=') {
 		op = '===';
-	} else if (this.op === '<>') {
-		op = '!=';
-	} else if (this.op === 'OR') {
+	} else if (op === '<>') {
+		op = '!===';
+	} else if (op === 'OR') {
 		op = '||';
 	}
 
 	// Arrow operator
-	if (this.op === '->') {
+	if (op === '->') {
 		// Expression to prevent error if object is empty (#344)
 		var ljs = '(' + leftJS() + '||{})';
 
@@ -398,7 +398,7 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 		}
 	}
 
-	if (this.op === '!') {
+	if (op === '!') {
 		if (typeof this.right === 'string') {
 			s =
 				'' +
@@ -411,7 +411,7 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 		// TODO - add other cases
 	}
 
-	if (this.op === 'IS') {
+	if (op === 'IS') {
 		s =
 			'' +
 			'(' +
@@ -425,15 +425,15 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 			')';
 	}
 
-	if (this.op === '==') {
+	if (op === '==') {
 		s = '' + 'alasql.utils.deepEqual(' + leftJS() + ',' + rightJS() + ')';
 	}
 
-	if (this.op === '===' || this.op === '!===') {
+	if (op === '===' || op === '!===') {
 		s =
 			'' +
 			'(' +
-			(this.op === '!===' ? '!' : '') +
+			(op === '!===' ? '!' : '') +
 			'(' +
 			'(' +
 			leftJS() +
@@ -446,16 +446,20 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 			')';
 	}
 
-	if (this.op === '!==') {
+	if (op === '<' || op === '>' || op === '<=' || op === '>=') {
+		s = '' + '(' + '(' + leftJS() + ').valueOf()' + op + '(' + rightJS() + ').valueOf()' + ')';
+	}
+
+	if (op === '!==') {
 		s = '' + '(!alasql.utils.deepEqual(' + leftJS() + ',' + rightJS() + '))';
 	}
-	if (this.op === '||') {
+	if (op === '||') {
 		s = '' + "(''+(" + leftJS() + "||'')+(" + rightJS() + '||""))';
 	}
-	if (this.op === 'LIKE' || this.op === 'NOT LIKE') {
+	if (op === 'LIKE' || op === 'NOT LIKE') {
 		var s =
 			'(' +
-			(this.op === 'NOT LIKE' ? '!' : '') +
+			(op === 'NOT LIKE' ? '!' : '') +
 			'alasql.utils.like(' +
 			rightJS() +
 			',' +
@@ -465,19 +469,19 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 		}
 		s += '))';
 	}
-	if (this.op === 'REGEXP') {
+	if (op === 'REGEXP') {
 		s = 'alasql.stdfn.REGEXP_LIKE(' + leftJS() + ',' + rightJS() + ')';
 	}
-	if (this.op === 'GLOB') {
+	if (op === 'GLOB') {
 		s = 'alasql.utils.glob(' + leftJS() + ',' + rightJS() + ')';
 	}
 
-	if (this.op === 'BETWEEN' || this.op === 'NOT BETWEEN') {
+	if (op === 'BETWEEN' || op === 'NOT BETWEEN') {
 		var left = leftJS();
 		s =
 			'' +
 			'(' +
-			(this.op === 'NOT BETWEEN' ? '!' : '') +
+			(op === 'NOT BETWEEN' ? '!' : '') +
 			'(' +
 			'(' +
 			ref(this.right1) +
@@ -503,7 +507,7 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 */
 	}
 
-	if (this.op === 'IN') {
+	if (op === 'IN') {
 		if (this.right instanceof yy.Select) {
 			s = '(';
 			//			s += 'this.query.queriesdata['+this.queriesidx+']';
@@ -518,17 +522,21 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 			s += leftJS() + ')>-1)';
 		} else if (Array.isArray(this.right)) {
 			//			if(this.right.length == 0) return 'false';
-			s = '([' + this.right.map(ref).join(',') + '].indexOf(' + leftJS() + ')>-1)';
-			//console.log(s);
+			s =
+				'([' +
+				this.right.map(ref).join(',') +
+				'].map(function(x){return x.valueOf()}).indexOf(' +
+				leftJS() +
+				'.valueOf())>-1)';
 		} else {
 			s = '(' + rightJS() + '.indexOf(' + leftJS() + ')>-1)';
-			//console.log('expression',350,s);
+
 			//		} else {
 			//			throw new Error('Wrong IN operator without SELECT part');
 		}
 	}
 
-	if (this.op === 'NOT IN') {
+	if (op === 'NOT IN') {
 		if (this.right instanceof yy.Select) {
 			s = '(';
 			//this.query.queriesdata['+this.queriesidx+']
@@ -538,8 +546,11 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 			s += leftJS() + ')<0)';
 		} else if (Array.isArray(this.right)) {
 			//			if(this.right.length == 0) return 'true';
-			s = '([' + this.right.map(ref).join(',') + '].indexOf(';
-			s += leftJS() + ')<0)';
+			s =
+				'([' +
+				this.right.map(ref).join(',') +
+				'].map(function(x){return x.valueOf()}).indexOf(';
+			s += leftJS() + '.valueOf())<0)';
 		} else {
 			s = '(' + rightJS() + '.indexOf(';
 			s += leftJS() + ')==-1)';
@@ -596,7 +607,7 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 	}
 
 	// Special case for AND optimization (if reduced)
-	if (this.op === 'AND') {
+	if (op === 'AND') {
 		if (this.left.reduced) {
 			if (this.right.reduced) {
 				return 'true';
@@ -611,7 +622,7 @@ yy.Op.prototype.toJS = function(context, tableid, defcols) {
 		op = '&&';
 	}
 
-	// if(this.op === '^') {
+	// if(op === '^') {
 	// 	// return 	'Math.pow('
 	// 	// 		+ leftJS()
 	// 	// 		+ ','
